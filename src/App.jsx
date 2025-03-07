@@ -13,6 +13,7 @@ import Challenges from './pages/Challenges';
 import Leaderboard from './pages/Leaderboard';
 import Social from './pages/Social';
 import NotFound from './pages/NotFound';
+import Landing from './pages/Landing';
 
 // Components
 import PrivateRoute from './components/PrivateRoute';
@@ -31,12 +32,13 @@ function App() {
     <AudioProvider>
       <Routes>
         {/* Public routes */}
+        <Route path="/" element={!currentUser ? <Landing /> : <Navigate to="/dashboard" />} />
         <Route path="/login" element={!currentUser ? <Login /> : <Navigate to="/dashboard" />} />
         <Route path="/register" element={!currentUser ? <Register /> : <Navigate to="/dashboard" />} />
         
         {/* Protected routes */}
         <Route element={<Layout />}>
-          <Route path="/" element={<Navigate to={currentUser ? "/dashboard" : "/login"} />} />
+          {/* <Route path="/" element={<Navigate to={currentUser ? "/dashboard" : "/login"} />} /> */}
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/workouts" element={<PrivateRoute><Workouts /></PrivateRoute>} />

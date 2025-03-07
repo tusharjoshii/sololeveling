@@ -1,467 +1,472 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useAudio } from '../contexts/AudioContext';
-import { motion } from 'framer-motion';
-import { 
-  Dumbbell, 
-  Play, 
-  Pause, 
-  RotateCcw, 
-  CheckCircle, 
-  Clock,
-  Filter,
-  ChevronDown,
-  ChevronUp
-} from 'lucide-react';
-import { toast } from 'react-toastify';
+import { useState, useEffect, useRef } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { useAuth } from "../contexts/AuthContext"
+import gsap from "gsap"
 
-function Workouts() {
-  const { userProfile, updateUserProfile } = useAuth();
-  const { playSoundEffect } = useAudio();
-  const [workouts, setWorkouts] = useState([]);
-  const [activeWorkout, setActiveWorkout] = useState(null);
-  const [timer, setTimer] = useState(0);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [filters, setFilters] = useState({
-    type: 'all',
-    difficulty: 'all'
-  });
-  
-  // Generate workouts based on user rank
+const workoutCategories = [
+  { id: "all", name: "All Workouts" },
+  { id: "strength", name: "Strength" },
+  { id: "cardio", name: "Cardio" },
+  { id: "flexibility", name: "Flexibility" },
+  { id: "hiit", name: "HIIT" },
+]
+
+const workouts = [
+  {
+    id: "w1",
+    title: "Upper Body Strength",
+    category: "strength",
+    duration: 45,
+    difficulty: "Intermediate",
+    experience: 50,
+    description: "Focus on building upper body strength with this comprehensive workout.",
+    image: "/images/workout-upper.jpg",
+    exercises: [
+      { name: "Push-ups", sets: 3, reps: "12-15", rest: 60 },
+      { name: "Pull-ups", sets: 3, reps: "8-10", rest: 90 },
+      { name: "Dumbbell Shoulder Press", sets: 3, reps: "10-12", rest: 60 },
+      { name: "Bent-over Rows", sets: 3, reps: "12", rest: 60 },
+      { name: "Tricep Dips", sets: 3, reps: "12-15", rest: 60 },
+      { name: "Bicep Curls", sets: 3, reps: "12", rest: 60 },
+    ],
+  },
+  {
+    id: "w2",
+    title: "Lower Body Power",
+    category: "strength",
+    duration: 50,
+    difficulty: "Intermediate",
+    experience: 55,
+    description: "Build leg strength and power with this intense lower body workout.",
+    image: "/images/workout-lower.jpg",
+    exercises: [
+      { name: "Squats", sets: 4, reps: "12", rest: 90 },
+      { name: "Deadlifts", sets: 4, reps: "10", rest: 120 },
+      { name: "Lunges", sets: 3, reps: "12 each leg", rest: 60 },
+      { name: "Leg Press", sets: 3, reps: "15", rest: 90 },
+      { name: "Calf Raises", sets: 4, reps: "20", rest: 60 },
+    ],
+  },
+  {
+    id: "w3",
+    title: "HIIT Cardio Blast",
+    category: "hiit",
+    duration: 30,
+    difficulty: "Advanced",
+    experience: 60,
+    description: "Intense interval training to maximize calorie burn and improve cardiovascular fitness.",
+    image: "/images/workout-hiit.jpg",
+    exercises: [
+      { name: "Jumping Jacks", duration: "45 sec", rest: "15 sec" },
+      { name: "Mountain Climbers", duration: "45 sec", rest: "15 sec" },
+      { name: "Burpees", duration: "45 sec", rest: "15 sec" },
+      { name: "High Knees", duration: "45 sec", rest: "15 sec" },
+      { name: "Jump Squats", duration: "45 sec", rest: "15 sec" },
+      { name: "Plank Jacks", duration: "45 sec", rest: "15 sec" },
+      { name: "Speed Skaters", duration: "45 sec", rest: "15 sec" },
+      { name: "Push-up to Side Plank", duration: "45 sec", rest: "15 sec" },
+    ],
+  },
+  {
+    id: "w4",
+    title: "Core Crusher",
+    category: "strength",
+    duration: 25,
+    difficulty: "Beginner",
+    experience: 40,
+    description: "Strengthen your core with this targeted ab and lower back workout.",
+    image: "/images/workout-core.jpg",
+    exercises: [
+      { name: "Plank", duration: "60 sec", rest: "30 sec" },
+      { name: "Crunches", sets: 3, reps: "20", rest: 45 },
+      { name: "Russian Twists", sets: 3, reps: "16 total", rest: 45 },
+      { name: "Leg Raises", sets: 3, reps: "15", rest: 45 },
+      { name: "Superman", sets: 3, reps: "12", rest: 45 },
+      { name: "Mountain Climbers", duration: "45 sec", rest: "30 sec" },
+    ],
+  },
+  {
+    id: "w5",
+    title: "Flexibility Flow",
+    category: "flexibility",
+    duration: 35,
+    difficulty: "Beginner",
+    experience: 35,
+    description: "Improve your flexibility and reduce muscle tension with this flowing routine.",
+    image: "/images/workout-flexibility.jpg",
+    exercises: [
+      { name: "Cat-Cow Stretch", duration: "60 sec" },
+      { name: "Downward Dog", duration: "60 sec" },
+      { name: "Forward Fold", duration: "60 sec" },
+      { name: "Pigeon Pose", duration: "60 sec each side" },
+      { name: "Butterfly Stretch", duration: "60 sec" },
+      { name: "Child's Pose", duration: "60 sec" },
+      { name: "Cobra Stretch", duration: "60 sec" },
+      { name: "Seated Forward Bend", duration: "60 sec" },
+    ],
+  },
+  {
+    id: "w6",
+    title: "Endurance Run",
+    category: "cardio",
+    duration: 40,
+    difficulty: "Intermediate",
+    experience: 50,
+    description: "Build your cardiovascular endurance with this progressive running workout.",
+    image: "/images/workout-cardio.jpg",
+    exercises: [
+      { name: "Warm-up Jog", duration: "5 min" },
+      { name: "Moderate Pace Run", duration: "10 min" },
+      { name: "Sprint Intervals", sets: 5, duration: "30 sec sprint, 90 sec jog" },
+      { name: "Steady State Run", duration: "15 min" },
+      { name: "Cool Down Walk", duration: "5 min" },
+    ],
+  },
+]
+
+const Workouts = () => {
+  const { currentUser } = useAuth()
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [selectedWorkout, setSelectedWorkout] = useState(null)
+  const [filteredWorkouts, setFilteredWorkouts] = useState(workouts)
+  const [searchQuery, setSearchQuery] = useState("")
+  const containerRef = useRef(null)
+
   useEffect(() => {
-    if (userProfile) {
-      const generatedWorkouts = generateWorkoutsForRank(userProfile.rank);
-      setWorkouts(generatedWorkouts);
+    // Filter workouts based on category and search query
+    let filtered = workouts
+
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter((workout) => workout.category === selectedCategory)
     }
-  }, [userProfile]);
-  
-  // Timer logic
-  useEffect(() => {
-    let interval;
-    
-    if (isTimerRunning) {
-      interval = setInterval(() => {
-        setTimer(prevTimer => prevTimer + 1);
-      }, 1000);
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(
+        (workout) =>
+          workout.title.toLowerCase().includes(query) ||
+          workout.description.toLowerCase().includes(query) ||
+          workout.category.toLowerCase().includes(query),
+      )
     }
-    
-    return () => clearInterval(interval);
-  }, [isTimerRunning]);
-  
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-  
-  const generateWorkoutsForRank = (rank) => {
-    const multiplier = {
-      'E': 1,
-      'D': 1.5,
-      'C': 2,
-      'B': 2.5,
-      'A': 3,
-      'S': 4
-    }[rank] || 1;
-    
-    return [
-      {
-        id: 'workout1',
-        title: 'Beginner Full Body',
-        description: 'A full body workout for beginners',
-        difficulty: 'beginner',
-        type: 'strength',
-        duration: '15-20 min',
-        image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        exercises: [
-          { name: 'Push-ups', reps: Math.floor(8 * multiplier), sets: 3 },
-          { name: 'Squats', reps: Math.floor(12 * multiplier), sets: 3 },
-          { name: 'Plank', duration: '30 seconds', sets: 3 },
-          { name: 'Jumping Jacks', reps: Math.floor(20 * multiplier), sets: 3 }
-        ]
-      },
-      {
-        id: 'workout2',
-        title: 'Cardio Blast',
-        description: 'High intensity cardio workout',
-        difficulty: 'intermediate',
-        type: 'cardio',
-        duration: '20-25 min',
-        image: 'https://images.unsplash.com/photo-1538805060514-97d9cc17730c?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        exercises: [
-          { name: 'High Knees', duration: '45 seconds', sets: 3 },
-          { name: 'Burpees', reps: Math.floor(10 * multiplier), sets: 3 },
-          { name: 'Mountain Climbers', duration: '45 seconds', sets: 3 },
-          { name: 'Jump Rope', duration: '1 minute', sets: 3 }
-        ]
-      },
-      {
-        id: 'workout3',
-        title: 'Core Crusher',
-        description: 'Focus on strengthening your core',
-        difficulty: 'intermediate',
-        type: 'strength',
-        duration: '15-20 min',
-        image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        exercises: [
-          { name: 'Sit-ups', reps: Math.floor(15 * multiplier), sets: 3 },
-          { name: 'Russian Twists', reps: Math.floor(20 * multiplier), sets: 3 },
-          { name: 'Leg Raises', reps: Math.floor(12 * multiplier), sets: 3 },
-          { name: 'Plank', duration: '45 seconds', sets: 3 }
-        ]
-      },
-      {
-        id: 'workout4',
-        title: 'Upper Body Focus',
-        description: 'Build strength in your upper body',
-        difficulty: 'advanced',
-        type: 'strength',
-        duration: '25-30 min',
-        image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        exercises: [
-          { name: 'Push-ups', reps: Math.floor(15 * multiplier), sets: 4 },
-          { name: 'Dips', reps: Math.floor(12 * multiplier), sets: 3 },
-          { name: 'Pull-ups', reps: Math.floor(8 * multiplier), sets: 3 },
-          { name: 'Shoulder Taps', reps: Math.floor(16 * multiplier), sets: 3 }
-        ]
-      },
-      {
-        id: 'workout5',
-        title: 'Lower Body Power',
-        description: 'Build strength in your legs',
-        difficulty: 'intermediate',
-        type: 'strength',
-        duration: '20-25 min',
-        image: 'https://images.unsplash.com/photo-1434682881908-b43d0467b798?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        exercises: [
-          { name: 'Squats', reps: Math.floor(20 * multiplier), sets: 4 },
-          { name: 'Lunges', reps: Math.floor(12 * multiplier), sets: 3 },
-          { name: 'Calf Raises', reps: Math.floor(15 * multiplier), sets: 3 },
-          { name: 'Glute Bridges', reps: Math.floor(15 * multiplier), sets: 3 }
-        ]
-      },
-      {
-        id: 'workout6',
-        title: 'HIIT Challenge',
-        description: 'High intensity interval training',
-        difficulty: 'advanced',
-        type: 'cardio',
-        duration: '25-30 min',
-        image: 'https://images.unsplash.com/photo-1599058917765-a780eda07a3e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-        exercises: [
-          { name: 'Burpees', reps: Math.floor(12 * multiplier), sets: 4 },
-          { name: 'Jump Squats', reps: Math.floor(15 * multiplier), sets: 4 },
-          { name: 'Mountain Climbers', duration: '45 seconds', sets: 4 },
-          { name: 'Jumping Lunges', reps: Math.floor(12 * multiplier), sets: 4 }
-        ]
-      }
-    ];
-  };
-  
-  const startWorkout = (workout) => {
-    setActiveWorkout(workout);
-    setTimer(0);
-    setIsTimerRunning(true);
-    playSoundEffect('buttonClick');
-    toast.info(`Starting ${workout.title} workout!`);
-  };
-  
-  const pauseTimer = () => {
-    setIsTimerRunning(false);
-    playSoundEffect('buttonClick');
-  };
-  
-  const resumeTimer = () => {
-    setIsTimerRunning(true);
-    playSoundEffect('buttonClick');
-  };
-  
-  const resetWorkout = () => {
-    setTimer(0);
-    setIsTimerRunning(false);
-    playSoundEffect('buttonClick');
-    toast.info('Workout reset!');
-  };
-  
-  const completeWorkout = async () => {
-    playSoundEffect('taskComplete');
-    
-    try {
-      // Update user profile with completed workout
-      const updatedProfile = {
-        workoutsCompleted: (userProfile.workoutsCompleted || 0) + 1,
-        experience: (userProfile.experience || 0) + 50,
-        coins: (userProfile.coins || 0) + 25
-      };
-      
-      // Check if level up is needed
-      if (Math.floor((updatedProfile.experience) / 100) > Math.floor((userProfile.experience || 0) / 100)) {
-        updatedProfile.level = (userProfile.level || 1) + 1;
-        playSoundEffect('levelUp');
-        toast.success(`Level up! You are now level ${updatedProfile.level}!`);
-      }
-      
-      await updateUserProfile(updatedProfile);
-      
-      setActiveWorkout(null);
-      setTimer(0);
-      setIsTimerRunning(false);
-      
-      toast.success('Workout completed! +25 coins, +50 XP');
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error('Failed to complete workout');
+
+    setFilteredWorkouts(filtered)
+
+    // Particle effect
+    const container = containerRef.current
+    const particles = []
+    const particleCount = 30
+
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement("div")
+      particle.className = "absolute w-1 h-1 rounded-full bg-blue-500 opacity-0"
+      container.appendChild(particle)
+
+      const size = Math.random() * 3
+      const x = Math.random() * window.innerWidth
+      const y = Math.random() * window.innerHeight
+
+      gsap.set(particle, {
+        x,
+        y,
+        width: size,
+        height: size,
+        backgroundColor:
+          i % 5 === 0
+            ? "#3b82f6"
+            : i % 5 === 1
+              ? "#1e40af"
+              : i % 5 === 2
+                ? "#60a5fa"
+                : i % 5 === 3
+                  ? "#7c3aed"
+                  : "#4f46e5",
+      })
+
+      const tl = gsap.timeline({ repeat: -1, delay: Math.random() * 5 })
+
+      tl.to(particle, {
+        opacity: Math.random() * 0.6 + 0.1,
+        duration: Math.random() * 2 + 1,
+      })
+        .to(
+          particle,
+          {
+            y: y - Math.random() * 100 - 50,
+            x: x + Math.random() * 100 - 50,
+            duration: Math.random() * 10 + 10,
+            ease: "none",
+          },
+          "-=2",
+        )
+        .to(
+          particle,
+          {
+            opacity: 0,
+            duration: Math.random() * 2 + 1,
+          },
+          "-=3",
+        )
+
+      particles.push({ element: particle, timeline: tl })
     }
-  };
-  
-  const filteredWorkouts = workouts.filter(workout => {
-    if (filters.type !== 'all' && workout.type !== filters.type) return false;
-    if (filters.difficulty !== 'all' && workout.difficulty !== filters.difficulty) return false;
-    return true;
-  });
-  
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'beginner': return 'text-green-500';
-      case 'intermediate': return 'text-yellow-500';
-      case 'advanced': return 'text-red-500';
-      default: return 'text-sl-light-gray';
+
+    return () => {
+      particles.forEach((p) => {
+        p.timeline.kill()
+        if (p.element.parentNode) {
+          p.element.parentNode.removeChild(p.element)
+        }
+      })
     }
-  };
-  
+  }, [selectedCategory, searchQuery])
+
+  const handleCategoryChange = (categoryId) => {
+    setSelectedCategory(categoryId)
+  }
+
+  const handleWorkoutSelect = (workout) => {
+    setSelectedWorkout(workout)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const handleCloseWorkout = () => {
+    setSelectedWorkout(null)
+  }
+
   return (
-    <div className="sl-container">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-8"
-      >
-        <h1 className="text-3xl font-bold mb-2">Workouts</h1>
-        <p className="text-sl-light-gray opacity-80">
-          Choose a workout to start your training
-        </p>
-      </motion.div>
-      
-      {/* Active workout */}
-      {activeWorkout && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="sl-card mb-8"
-        >
-          <div className="flex flex-col md:flex-row items-center mb-6">
-            <div className="w-full md:w-1/3 mb-4 md:mb-0 md:mr-6">
-              <div className="relative rounded-lg overflow-hidden h-48">
-                <img 
-                  src={activeWorkout.image} 
-                  alt={activeWorkout.title} 
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-sl-dark-purple to-transparent"></div>
-                <div className="absolute bottom-4 left-4">
-                  <h3 className="text-xl font-bold">{activeWorkout.title}</h3>
-                  <p className="text-sm opacity-80">{activeWorkout.duration}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="w-full md:w-2/3">
-              <div className="flex flex-col md:flex-row justify-between items-center mb-4">
-                <div className="mb-4 md:mb-0">
-                  <h2 className="text-2xl font-bold mb-1">Current Workout</h2>
-                  <p className="opacity-80">{activeWorkout.description}</p>
-                </div>
-                
-                <div className="flex items-center">
-                  <div className="text-center mr-6">
-                    <p className="text-3xl font-bold font-display">{formatTime(timer)}</p>
-                    <p className="text-xs opacity-80">Elapsed Time</p>
-                  </div>
-                  
-                  <div className="flex space-x-2">
-                    {isTimerRunning ? (
-                      <button 
-                        className="p-3 rounded-full bg-sl-soft-purple bg-opacity-20 hover:bg-opacity-30 transition-colors"
-                        onClick={pauseTimer}
-                      >
-                        <Pause size={20} />
-                      </button>
-                    ) : (
-                      <button 
-                        className="p-3 rounded-full bg-sl-soft-purple bg-opacity-20 hover:bg-opacity-30 transition-colors"
-                        onClick={resumeTimer}
-                      >
-                        <Play size={20} />
-                      </button>
-                    )}
-                    
-                    <button 
-                      className="p-3 rounded-full bg-sl-soft-purple bg-opacity-20 hover:bg-opacity-30 transition-colors"
-                      onClick={resetWorkout}
-                    >
-                      <RotateCcw size={20} />
-                    </button>
-                    
-                    <button 
-                      className="p-3 rounded-full bg-green-500 bg-opacity-20 hover:bg-opacity-30 transition-colors text-green-500"
-                      onClick={completeWorkout}
-                    >
-                      <CheckCircle size={20} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-sl-dark-purple rounded-lg p-4">
-                <h3 className="font-medium mb-3">Exercises</h3>
-                <div className="space-y-3">
-                  {activeWorkout.exercises.map((exercise, index) => (
-                    <div key={index} className="flex justify-between items-center p-2 rounded-md hover:bg-sl-soft-purple hover:bg-opacity-10 transition-colors">
-                      <div>
-                        <p className="font-medium">{exercise.name}</p>
-                        <p className="text-sm opacity-80">
-                          {exercise.reps 
-                            ? `${exercise.sets} sets x ${exercise.reps} reps` 
-                            : `${exercise.sets} sets x ${exercise.duration}`}
-                        </p>
-                      </div>
-                      <div className="w-6 h-6 rounded-full border-2 border-sl-soft-purple flex items-center justify-center">
-                        {index + 1}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <button 
-            className="sl-button w-full"
-            onClick={() => setActiveWorkout(null)}
+    <div ref={containerRef} className="relative min-h-screen bg-gray-900 pt-20 pb-10 px-4 sm:px-6 lg:px-8">
+      {/* Background elements */}
+      <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/30 via-gray-900/70 to-gray-900"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-gray-900/80 via-gray-900/90 to-gray-900"></div>
+
+      <div className="relative max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <motion.h1 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-4xl font-bold text-white mb-2"
           >
-            Choose Different Workout
-          </button>
-        </motion.div>
-      )}
-      
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        className="mb-6"
-      >
-        <button 
-          className="flex items-center mb-4 text-sl-soft-purple hover:text-sl-blue transition-colors"
-          onClick={() => setFilterOpen(!filterOpen)}
-        >
-          <Filter size={18} className="mr-2" />
-          Filter Workouts
-          {filterOpen ? <ChevronUp size={18} className="ml-2" /> : <ChevronDown size={18} className="ml-2" />}
-        </button>
-        
-        {filterOpen && (
-          <div className="sl-card mb-4 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Workout Type</label>
-                <select 
-                  className="sl-input w-full"
-                  value={filters.type}
-                  onChange={(e) => setFilters({...filters, type: e.target.value})}
-                >
-                  <option value="all">All Types</option>
-                  <option value="strength">Strength</option>
-                  <option value="cardio">Cardio</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Difficulty</label>
-                <select 
-                  className="sl-input w-full"
-                  value={filters.difficulty}
-                  onChange={(e) => setFilters({...filters, difficulty: e.target.value})}
-                >
-                  <option value="all">All Difficulties</option>
-                  <option value="beginner">Beginner</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
-      </motion.div>
-      
-      {/* Workout list */}
-      {!activeWorkout && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {filteredWorkouts.map(workout => (
+            {selectedWorkout ? selectedWorkout.title : "Workouts"}
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-gray-400"
+          >
+            {selectedWorkout 
+              ? selectedWorkout.description 
+              : "Choose your battle and grow stronger with each workout."}
+          </motion.p>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {selectedWorkout ? (
             <motion.div
-              key={workout.id}
-              whileHover={{ scale: 1.03 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-              className="sl-card overflow-hidden cursor-pointer"
-              onClick={() => startWorkout(workout)}
+              key="workout-detail"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
             >
-              <div className="relative h-48 mb-4 rounded-lg overflow-hidden">
-                <img 
-                  src={workout.image} 
-                  alt={workout.title} 
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-sl-dark-purple to-transparent"></div>
-                <div className="absolute top-3 right-3">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getDifficultyColor(workout.difficulty)}`}>
-                    {workout.difficulty.charAt(0).toUpperCase() + workout.difficulty.slice(1)}
-                  </span>
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-xl overflow-hidden mb-8">
+                <div className="relative h-64 sm:h-80">
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-10"></div>
+                  <img 
+                    src={selectedWorkout.image || "/placeholder.svg?height=400&width=800"} 
+                    alt={selectedWorkout.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <button 
+                    onClick={handleCloseWorkout}
+                    className="absolute top-4 right-4 z-20 bg-gray-900/50 hover:bg-gray-900/70 rounded-full p-2 transition-colors duration-300"
+                  >
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                  <div className="absolute bottom-4 left-4 right-4 z-20">
+                    <h2 className="text-3xl font-bold text-white mb-2">{selectedWorkout.title}</h2>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium">
+                        {selectedWorkout.category.charAt(0).toUpperCase() + selectedWorkout.category.slice(1)}
+                      </span>
+                      <span className="px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-sm font-medium">
+                        {selectedWorkout.difficulty}
+                      </span>
+                      <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-medium">
+                        {selectedWorkout.duration} min
+                      </span>
+                      <span className="px-3 py-1 bg-amber-500/20 text-amber-400 rounded-full text-sm font-medium">
+                        +{selectedWorkout.experience} XP
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-white mb-4">Exercises</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    {selectedWorkout.exercises.map((exercise, index) => (
+                      <motion.div 
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                        className="bg-gray-700/50 rounded-lg p-4"
+                      >
+                        <h4 className="font-medium text-white mb-2">{exercise.name}</h4>
+                        <div className="flex flex-wrap gap-2 text-sm">
+                          {exercise.sets && (
+                            <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-md">
+                              {exercise.sets} sets
+                            </span>
+                          )}
+                          {exercise.reps && (
+                            <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded-md">
+                              {exercise.reps} reps
+                            </span>
+                          )}
+                          {exercise.duration && (
+                            <span className="px-2 py-1 bg-green-500/20 text-green-400 rounded-md">
+                              {exercise.duration}
+                            </span>
+                          )}
+                          {exercise.rest && (
+                            <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded-md">
+                              {exercise.rest} rest
+                            </span>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 rounded-lg font-medium shadow-lg shadow-blue-600/30 transition-all duration-300">
+                      Start Workout
+                    </button>
+                    <button className="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition-colors duration-300">
+                      Save for Later
+                    </button>
+                  </div>
                 </div>
               </div>
-              
-              <h3 className="text-xl font-bold mb-1">{workout.title}</h3>
-              <p className="text-sm opacity-80 mb-3">{workout.description}</p>
-              
-              <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <Dumbbell size={16} className="mr-1" />
-                  <span className="text-sm">{workout.type.charAt(0).toUpperCase() + workout.type.slice(1)}</span>
-                </div>
-                <div className="flex items-center">
-                  <Clock size={16} className="mr-1" />
-                  <span className="text-sm">{workout.duration}</span>
-                </div>
-              </div>
-              
-              <div className="mt-4 pt-4 border-t border-sl-soft-purple border-opacity-20">
-                <button className="sl-button w-full flex items-center justify-center">
-                  <Play size={18} className="mr-2" />
-                  Start Workout
+
+              <div className="flex justify-between">
+                <button 
+                  onClick={handleCloseWorkout}
+                  className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors duration-300 flex items-center"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Back to Workouts
                 </button>
               </div>
             </motion.div>
-          ))}
-          
-          {filteredWorkouts.length === 0 && (
-            <div className="col-span-full text-center py-12">
-              <Dumbbell size={48} className="mx-auto mb-4 opacity-50" />
-              <h3 className="text-xl font-bold mb-2">No workouts found</h3>
-              <p className="opacity-80">Try changing your filters to see more workouts</p>
-            </div>
+          ) : (
+            <motion.div
+              key="workout-list"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+            >
+              {/* Search and filter */}
+              <div className="mb-8">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      placeholder="Search workouts..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 focus:border-blue-500 text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all pl-10"
+                    />
+                    <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
+                    {workoutCategories.map((category) => (
+                      <button
+                        key={category.id}
+                        onClick={() => handleCategoryChange(category.id)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap mr-2 transition-colors duration-300 ${
+                          selectedCategory === category.id
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-800/50 text-gray-300 hover:bg-gray-700"
+                        }`}
+                      >
+                        {category.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Workout grid */}
+              {filteredWorkouts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredWorkouts.map((workout, index) => (
+                    <motion.div
+                      key={workout.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: index * 0.1, opacity: 1, y: 0}}
+                      // transition={{ duration: 0.5, delay: index * 0.1 }}
+                      className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-xl overflow-hidden hover:border-blue-500/30 transition-all duration-300 group"
+                      onClick={() => handleWorkoutSelect(workout)}
+                    >
+                      <div className="relative h-48">
+                        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent z-10"></div>
+                        <img 
+                          src={workout.image || "/placeholder.svg?height=300&width=500"} 
+                          alt={workout.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute bottom-4 left-4 right-4 z-20">
+                          <h3 className="text-xl font-bold text-white mb-1">{workout.title}</h3>
+                          <div className="flex flex-wrap gap-2">
+                            <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full text-xs font-medium">
+                              {workout.category.charAt(0).toUpperCase() + workout.category.slice(1)}
+                            </span>
+                            <span className="px-2 py-0.5 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">
+                              {workout.duration} min
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <p className="text-gray-400 text-sm mb-3 line-clamp-2">{workout.description}</p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-purple-400">{workout.difficulty}</span>
+                          <span className="text-sm font-medium text-amber-400">+{workout.experience} XP</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-8 text-center">
+                  <svg className="w-12 h-12 text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <h3 className="text-xl font-bold text-white mb-2">No workouts found</h3>
+                  <p className="text-gray-400">Try adjusting your search or filter criteria.</p>
+                </div>
+              )}
+            </motion.div>
           )}
-        </motion.div>
-      )}
+        </AnimatePresence>
+      </div>
     </div>
-  );
+  )
 }
 
-export default Workouts;
+export default Workouts
+

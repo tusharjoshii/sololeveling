@@ -1,54 +1,131 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+"use client"
 
-function LoadingScreen() {
+import { useEffect, useRef } from "react"
+import { motion } from "framer-motion"
+import gsap from "gsap"
+
+const LoadingScreen = () => {
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    // Particle effect
+    const container = containerRef.current
+    const particles = []
+    const particleCount = 30
+
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement("div")
+      particle.className = "absolute w-1 h-1 rounded-full bg-blue-500 opacity-0"
+      container.appendChild(particle)
+
+      const size = Math.random() * 3
+      const x = Math.random() * window.innerWidth
+      const y = Math.random() * window.innerHeight
+
+      gsap.set(particle, {
+        x,
+        y,
+        width: size,
+        height: size,
+        backgroundColor: i % 3 === 0 ? "#3b82f6" : i % 3 === 1 ? "#1e40af" : "#60a5fa",
+      })
+
+      const tl = gsap.timeline({ repeat: -1, delay: Math.random() * 2 })
+
+      tl.to(particle, {
+        opacity: Math.random() * 0.6 + 0.1,
+        duration: Math.random() * 1 + 0.5,
+      })
+        .to(
+          particle,
+          {
+            y: y - Math.random() * 100 - 50,
+            x: x + Math.random() * 100 - 50,
+            duration: Math.random() * 5 + 5,
+            ease: "none",
+          },
+          "-=1",
+        )
+        .to(
+          particle,
+          {
+            opacity: 0,
+            duration: Math.random() * 1 + 0.5,
+          },
+          "-=1.5",
+        )
+
+      particles.push({ element: particle, timeline: tl })
+    }
+
+    return () => {
+      particles.forEach((p) => {
+        p.timeline.kill()
+        if (p.element.parentNode) {
+          p.element.parentNode.removeChild(p.element)
+        }
+      })
+    }
+  }, [])
+
   return (
-    <div className="h-screen w-screen flex flex-col items-center justify-center bg-sl-dark-purple">
-      <motion.div
-        animate={{
-          scale: [1, 1.2, 1],
-          rotate: [0, 180, 360],
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        className="mb-8"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#A480F2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2v8"></path>
-          <path d="m4.93 10.93 1.41 1.41"></path>
-          <path d="M2 18h2"></path>
-          <path d="M20 18h2"></path>
-          <path d="m19.07 10.93-1.41 1.41"></path>
-          <path d="M22 22H2"></path>
-          <path d="m16 8-4 4-4-4"></path>
-          <path d="M16 16a4 4 0 0 0-8 0"></path>
-        </svg>
-      </motion.div>
-      
-      <h1 className="sl-gradient-text text-3xl mb-4">SOLO LEVELING</h1>
-      
-      <div className="w-64 h-2 bg-sl-dark-violet rounded-full overflow-hidden">
+    <div ref={containerRef} className="fixed inset-0 bg-gray-900 flex items-center justify-center z-50">
+      <div className="relative">
         <motion.div
-          className="h-full bg-gradient-to-r from-sl-soft-purple to-sl-blue"
-          initial={{ width: "0%" }}
-          animate={{ width: "100%" }}
-          transition={{ duration: 2, repeat: Infinity }}
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.5, 1, 0.5],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: "easeInOut",
+          }}
+          className="absolute inset-0 rounded-full bg-blue-500/20 blur-xl"
         />
+
+        <div className="relative flex flex-col items-center">
+          <motion.div
+            animate={{
+              rotate: 360,
+            }}
+            transition={{
+              duration: 4,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "linear",
+            }}
+            className="w-20 h-20 rounded-full border-4 border-blue-500 border-t-transparent mb-6"
+          />
+
+          <motion.h1
+            animate={{
+              opacity: [0.5, 1, 0.5],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "easeInOut",
+            }}
+            className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500"
+          >
+            ARISE
+          </motion.h1>
+
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: "100%" }}
+            transition={{
+              duration: 2,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "easeInOut",
+            }}
+            className="h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mt-4 w-40"
+          />
+        </div>
       </div>
-      
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-        className="mt-4 text-sl-light-gray"
-      >
-        Preparing your hunter awakening...
-      </motion.p>
     </div>
-  );
+  )
 }
 
-export default LoadingScreen;
+export default LoadingScreen
+
