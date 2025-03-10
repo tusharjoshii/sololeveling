@@ -8,6 +8,7 @@ import { auth, db } from "../firebase/config"
 import { useAuth } from "../contexts/AuthContext"
 import { motion } from "framer-motion"
 import gsap from "gsap"
+import CustomInput from "../components/CustomInput"
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -181,77 +182,42 @@ const Register = () => {
           )}
 
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-1">
-                Username
-              </label>
-              <div className="relative">
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  value={formData.username}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 focus:border-purple-500 text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
-                  placeholder="Choose a username"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-                Email
-              </label>
-              <div className="relative">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 focus:border-purple-500 text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
-                  placeholder="Enter your email"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 focus:border-purple-500 text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
-                  placeholder="Create a password"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-1">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 focus:border-purple-500 text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
-                  placeholder="Confirm your password"
-                />
-              </div>
-            </div>
+            <CustomInput
+              label="Username"
+              id="username"
+              type="text"
+              value={formData.username}
+              onChange={handleChange}
+              required
+              placeholder="Choose a username"
+            />
+            <CustomInput
+              label="Email"
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              placeholder="Enter your email"
+            />
+            <CustomInput
+              label="Password"
+              id="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              placeholder="Create a password"
+            />
+            <CustomInput
+              label="Confirm Password"
+              id="confirmPassword"
+              type="password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              placeholder="Confirm your password"
+            />
 
             <div>
               <motion.button

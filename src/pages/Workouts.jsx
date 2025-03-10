@@ -417,7 +417,11 @@ const Workouts = () => {
                       key={workout.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.1, opacity: 1, y: 0}}
+                      transition={{ 
+                        duration: 0.5, 
+                        delay: index * 0.1
+                      }}
+                      // transition={{ duration: 0.5, delay: index * 0.1, opacity: 1, y: 0}}
                       // transition={{ duration: 0.5, delay: index * 0.1 }}
                       className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 shadow-xl overflow-hidden hover:border-blue-500/30 transition-all duration-300 group"
                       onClick={() => handleWorkoutSelect(workout)}

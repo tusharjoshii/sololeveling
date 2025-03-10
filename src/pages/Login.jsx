@@ -7,6 +7,7 @@ import { auth } from "../firebase/config"
 import { useAuth } from "../contexts/AuthContext"
 import { motion } from "framer-motion"
 import gsap from "gsap"
+import CustomInput from "../components/CustomInput"
 
 const Login = () => {
   const [email, setEmail] = useState("")
@@ -97,15 +98,27 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setError("")
+    setLoading(true)
 
     try {
-      setError("")
-      setLoading(true)
       await signInWithEmailAndPassword(auth, email, password)
       navigate("/dashboard")
     } catch (error) {
-      setError("Failed to sign in. Please check your credentials.")
       console.error(error)
+      switch (error.code) {
+        case "auth/user-not-found":
+          setError("No user found with this email address.")
+          break
+        case "auth/wrong-password":
+          setError("Incorrect password. Please try again.")
+          break
+        case "auth/invalid-email":
+          setError("Invalid email address. Please check and try again.")
+          break
+        default:
+          setError("Failed to sign in. Please check your credentials.")
+      }
     } finally {
       setLoading(false)
     }
@@ -143,41 +156,24 @@ const Login = () => {
           )}
 
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-                Email
-              </label>
-              <div className="relative">
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 focus:border-blue-500 text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
-                  placeholder="Enter your email"
-                />
-                <div className="absolute inset-0 rounded-lg pointer-events-none border border-blue-500/0 focus-within:border-blue-500/50"></div>
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 bg-gray-700/50 border border-gray-600 focus:border-blue-500 text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
-                  placeholder="Enter your password"
-                />
-                <div className="absolute inset-0 rounded-lg pointer-events-none border border-blue-500/0 focus-within:border-blue-500/50"></div>
-              </div>
-            </div>
+            <CustomInput
+              label="Email"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="Enter your email"
+            />
+            <CustomInput
+              label="Password"
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="Enter your password"
+            />
 
             <div>
               <motion.button

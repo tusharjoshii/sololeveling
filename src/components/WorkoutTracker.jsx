@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import gsap from "gsap"
+import { doc, updateDoc, increment } from "firebase/firestore"
+import { db } from "../firebase/config"
+import { useAuth } from "../contexts/AuthContext"
 
 const WorkoutTracker = ({ workout, onComplete }) => {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0)
@@ -17,6 +20,7 @@ const WorkoutTracker = ({ workout, onComplete }) => {
   const progressBarRef = useRef(null)
 
   const currentExercise = workout?.exercises[currentExerciseIndex]
+  const { currentUser } = useAuth()
 
   // Calculate total workout time
   const totalWorkoutTime = workout?.exercises.reduce((total, exercise) => {
@@ -230,15 +234,33 @@ const WorkoutTracker = ({ workout, onComplete }) => {
     }
   }
 
-  const completeWorkout = () => {
-    setShowCompleteModal(false)
-    if (onComplete) onComplete()
-  }
-
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, "0")}`
+  }
+
+  const completeWorkout = async () => {
+    if (currentUser) {
+      const userDocRef = doc(db, "users", currentUser.uid)
+      try {
+        await updateDoc(userDocRef, {
+          completedWorkouts: increment(1),
+          experience: increment(workout.experience),
+          lastWorkout: new Date(),
+        })
+        // You could also update the streak here if it's the next day
+        onComplete()
+      } catch (error) {
+        console.error("Error updating user data:", error)
+        // Handle error (show a message to the user)
+      }
+    }
+  }
+
+  const handleCompleteWorkout = () => {
+    setShowCompleteModal(false)
+    completeWorkout()
   }
 
   if (!workout) return null
@@ -530,7 +552,7 @@ const WorkoutTracker = ({ workout, onComplete }) => {
                 className="text-center relative z-10"
               >
                 <button
-                  onClick={completeWorkout}
+                  onClick={handleCompleteWorkout}
                   className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-lg font-medium shadow-lg shadow-blue-600/30 transition-all duration-300"
                 >
                   Continue
